@@ -1,0 +1,29 @@
+name: Test with tf_path input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Install OpenTofu for tf_path test
+        run: |
+          curl -fsSL https://get.opentofu.org/install-opentofu.sh | sh -s -- --install-method standalone --opentofu-version 1.9.1
+          echo "TOFU_PATH=$(which tofu)" >> $GITHUB_ENV
+      - id: action
+        uses: .
+        with:
+          tg_version: "0.67.16"
+          tf_path: ${{ env.TOFU_PATH }}
+          tg_command: "version"
+          github_token: ${{ github.token }}
+      - name: Assert exit code is 0
+        env:
+          ACTUAL: ${{ steps.action.outputs.tg_action_exit_code }}
+        run: |
+          echo "actual exit code: $ACTUAL"
+          if [ "$ACTUAL" != "0" ]; then
+            echo "FAIL: expected exit code 0, got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS"
