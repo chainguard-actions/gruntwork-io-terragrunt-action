@@ -1,0 +1,36 @@
+name: Test tf_path and tg_dir inputs
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Install OpenTofu to get tf_path
+        run: |
+          curl -fsSL https://get.opentofu.org/install-opentofu.sh | sh -s -- --install-method standalone --opentofu-version 1.9.1
+          echo "TOFU_PATH=$(which tofu)" >> $GITHUB_ENV
+      - name: Create tg_dir with minimal terragrunt config
+        run: |
+          mkdir -p /tmp/tg-test
+          cat > /tmp/tg-test/terragrunt.hcl <<'EOF'
+          # minimal terragrunt config for testing
+          EOF
+      - id: action
+        uses: .
+        with:
+          tg_version: "0.77.22"
+          tf_path: ${{ env.TOFU_PATH }}
+          tg_command: "--version"
+          tg_dir: "/tmp/tg-test"
+          github_token: ${{ github.token }}
+      - name: Assert exit code is 0
+        env:
+          ACTUAL: ${{ steps.action.outputs.tg_action_exit_code }}
+        run: |
+          echo "actual exit code: $ACTUAL"
+          if [ "$ACTUAL" != "0" ]; then
+            echo "FAIL: expected exit code 0, got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS"
