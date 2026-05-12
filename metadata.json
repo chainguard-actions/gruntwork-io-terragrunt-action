@@ -1,0 +1,7 @@
+{
+  "owner": "gruntwork-io",
+  "name": "terragrunt-action",
+  "visibility": "internal",
+  "description": "Setup and execute Terragrunt.",
+  "block_publish": false
+}
