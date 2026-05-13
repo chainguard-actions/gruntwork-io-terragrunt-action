@@ -1,0 +1,36 @@
+name: Test basic usage with tofu_version
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          tg_version: "0.68.0"
+          tofu_version: "1.9.0"
+          tg_command: "version"
+          tg_dir: "."
+          github_token: ${{ github.token }}
+      - name: Assert exit code is 0
+        env:
+          EXIT_CODE: ${{ steps.action.outputs.tg_action_exit_code }}
+        run: |
+          echo "exit code: $EXIT_CODE"
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "FAIL: expected exit code 0, got '$EXIT_CODE'"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert output contains terragrunt version
+        env:
+          OUTPUT: ${{ steps.action.outputs.tg_action_output }}
+        run: |
+          echo "output: $OUTPUT"
+          if [ -z "$OUTPUT" ]; then
+            echo "FAIL: expected non-empty output"
+            exit 1
+          fi
+          echo "PASS"
