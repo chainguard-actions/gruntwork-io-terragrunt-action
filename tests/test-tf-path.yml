@@ -1,0 +1,48 @@
+name: Test usage with tf_path input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install OpenTofu to get a tf binary path
+        run: |
+          curl -fsSL https://get.opentofu.org/install-opentofu.sh | sh -s -- --install-method standalone --opentofu-version 1.9.1 --install-path /tmp/tofu-bin
+          echo "Installed tofu at /tmp/tofu-bin/tofu"
+          /tmp/tofu-bin/tofu version
+
+      - name: Create a temp directory for tg_dir
+        run: mkdir -p /tmp/tg-test-dir
+
+      - id: action
+        uses: .
+        with:
+          tg_version: "0.67.16"
+          tf_path: "/tmp/tofu-bin/tofu"
+          tg_command: "version"
+          tg_dir: "/tmp/tg-test-dir"
+          github_token: ${{ github.token }}
+
+      - name: Assert exit code is 0
+        env:
+          ACTUAL: ${{ steps.action.outputs.tg_action_exit_code }}
+        run: |
+          echo "actual exit code: $ACTUAL"
+          if [ "$ACTUAL" != "0" ]; then
+            echo "FAIL: expected exit code 0, got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS"
+
+      - name: Assert output is non-empty
+        env:
+          ACTUAL: ${{ steps.action.outputs.tg_action_output }}
+        run: |
+          echo "actual output: $ACTUAL"
+          if [ -z "$ACTUAL" ]; then
+            echo "FAIL: expected non-empty output"
+            exit 1
+          fi
+          echo "PASS"
