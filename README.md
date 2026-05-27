@@ -12,7 +12,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 | v3.0.2 | [`v3.0.2`](https://github.com/chainguard-actions/gruntwork-io-terragrunt-action/tree/v3.0.2) | — |
 | v3.1.0 | [`v3.1.0`](https://github.com/chainguard-actions/gruntwork-io-terragrunt-action/tree/v3.1.0) | — |
 | v3.2.0 | [`v3.2.0`](https://github.com/chainguard-actions/gruntwork-io-terragrunt-action/tree/v3.2.0) | — |
-| v3.3.0 | [`v3.3.0`](https://github.com/chainguard-actions/gruntwork-io-terragrunt-action/tree/v3.3.0) | — |
+| v3.3.0 | [`v3.3.0`](https://github.com/chainguard-actions/gruntwork-io-terragrunt-action/tree/v3.3.0) | [`ad66bd1`](https://github.com/gruntwork-io/terragrunt-action/commit/ad66bd184abd991249047d1f61bce1f29aaed2a6) |
 
 ## Privacy
 
