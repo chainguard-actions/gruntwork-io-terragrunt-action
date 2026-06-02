@@ -1,0 +1,30 @@
+name: Test with tf_path input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Install tofu manually to get tf_path
+        run: |
+          # Install a known version of tofu to use as tf_path
+          TOFU_VERSION="1.9.0"
+          curl -fsSL "https://github.com/opentofu/opentofu/releases/download/v${TOFU_VERSION}/tofu_${TOFU_VERSION}_linux_amd64.zip" -o /tmp/tofu.zip
+          unzip -q /tmp/tofu.zip -d /tmp/tofu-bin
+          chmod +x /tmp/tofu-bin/tofu
+          echo "tofu_path=/tmp/tofu-bin/tofu" >> $GITHUB_ENV
+      - id: action
+        uses: .
+        with:
+          tg_version: "0.67.16"
+          tf_path: "/tmp/tofu-bin/tofu"
+          github_token: ${{ github.token }}
+      - name: Assert terragrunt is installed
+        run: |
+          if ! command -v terragrunt &>/dev/null; then
+            echo "FAIL: terragrunt not found in PATH"
+            exit 1
+          fi
+          echo "PASS: terragrunt is installed"
+          terragrunt --version
