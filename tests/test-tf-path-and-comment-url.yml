@@ -1,0 +1,35 @@
+name: Test tf_path and tg_comment_url inputs
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Install tofu to use as tf_path
+        run: |
+          TOFU_VERSION="1.9.0"
+          curl -fsSL "https://github.com/opentofu/opentofu/releases/download/v${TOFU_VERSION}/tofu_${TOFU_VERSION}_linux_amd64.zip" -o tofu.zip
+          unzip -q tofu.zip tofu
+          chmod +x tofu
+          TOFU_BIN="$(pwd)/tofu"
+          echo "TOFU_BIN=${TOFU_BIN}" >> $GITHUB_ENV
+      - id: action
+        uses: .
+        with:
+          tg_version: "0.77.22"
+          tf_path: ${{ env.TOFU_BIN }}
+          tg_command: "--version"
+          tg_dir: "."
+          tg_comment_url: "https://api.github.com/repos/example/repo/issues/1/comments"
+          github_token: ${{ github.token }}
+      - name: Assert exit code is 0
+        env:
+          EXIT_CODE: ${{ steps.action.outputs.tg_action_exit_code }}
+        run: |
+          echo "exit code: $EXIT_CODE"
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "FAIL: expected exit code 0, got $EXIT_CODE"
+            exit 1
+          fi
+          echo "PASS"
