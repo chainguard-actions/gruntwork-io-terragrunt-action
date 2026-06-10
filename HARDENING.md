@@ -1,8 +1,10 @@
+<!-- markdownlint-disable -->
+
 # Hardening Report: gruntwork-io--terragrunt-action/v3.4.0
 
 > This file was generated automatically by the hardening agent.
 
-**Policy SHA:** `ff50f15e4b79bfbf764dafdfd2579175a6ea9771`
+**Policy SHA:** `d636be7e43ef829af6e853da6b3c7566db9f72fe`
 
 **Test Policy SHA:** `843adf9e4b8f85d0c08b27b9d0b09dd094b54702`
 
@@ -14,11 +16,11 @@ Action **gruntwork-io--terragrunt-action/v3.4.0** was hardened automatically. 1 
 
 ### script-injection (severity: high)
 
-The 'Execute Terragrunt' step interpolates `${{ github.action_path }}` directly inside the `run:` value: `run: ${{ github.action_path }}/src/main.sh`. Per the check definition, all `github.*` context values are considered attacker-controlled and must not be interpolated directly in `run:` blocks. The value should be passed via an `env:` variable and referenced as `$ENV_VAR` in the shell command instead.
+Sub-rule (a): A ${{ ... }} expression is interpolated directly inside a `run:` shell command string. In the 'Execute Terragrunt' step, the run: value is `run: ${{ github.action_path }}/src/main.sh`, which injects the `github.action_path` context value directly into the shell command before the shell ever sees it. Per the check rules, any ${{ ... }} expression inside a run: block is a script-injection finding regardless of which context it reads from. The safe alternative is to use the `$GITHUB_ACTION_PATH` environment variable instead.
 
 Locations:
 
-- `action.yml:89`
+- `action.yml:87`
 
 ## Iteration Notes
 
@@ -28,5 +30,5 @@ Locations:
 
 **Notes:**
 
-Fixed the 'Execute Terragrunt' step in action.yml (line 89): moved `${{ github.action_path }}` out of the `run:` block and into the `env:` block as `ACTION_PATH: ${{ github.action_path }}`. The `run:` command now uses `"$ACTION_PATH/src/main.sh"` instead of `${{ github.action_path }}/src/main.sh`, preventing direct interpolation of GitHub context expressions in shell commands.
+Fixed script-injection in action.yml line 87: replaced `run: ${{ github.action_path }}/src/main.sh` with `run: "$GITHUB_ACTION_PATH/src/main.sh"`. The $GITHUB_ACTION_PATH environment variable is automatically set by GitHub Actions and provides the same value without requiring expression interpolation in the shell command string.
 

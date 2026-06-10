@@ -1,4 +1,4 @@
-name: Test basic install (tg_version + tofu_version)
+name: Test basic tool installation (tg_version + tofu_version)
 on:
   workflow_dispatch:
 jobs:
@@ -11,20 +11,13 @@ jobs:
         with:
           tg_version: "0.67.16"
           tofu_version: "1.9.0"
-          github_token: ${{ github.token }}
       - name: Assert terragrunt is installed
         run: |
-          if ! command -v terragrunt &>/dev/null; then
-            echo "FAIL: terragrunt not found in PATH"
-            exit 1
-          fi
-          echo "PASS: terragrunt is installed"
+          which terragrunt || { echo "FAIL: terragrunt not found in PATH"; exit 1; }
           terragrunt --version
+          echo "PASS: terragrunt installed successfully"
       - name: Assert tofu is installed
         run: |
-          if ! command -v tofu &>/dev/null; then
-            echo "FAIL: tofu not found in PATH"
-            exit 1
-          fi
-          echo "PASS: tofu is installed"
+          which tofu || { echo "FAIL: tofu not found in PATH"; exit 1; }
           tofu --version
+          echo "PASS: tofu installed successfully"

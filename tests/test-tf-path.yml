@@ -1,4 +1,4 @@
-name: Test with tf_path input
+name: Test with tf_path and tg_comment_url
 on:
   workflow_dispatch:
 jobs:
@@ -6,25 +6,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - name: Install tofu manually to get tf_path
+      - name: Install tofu to get a tf binary path
         run: |
-          # Install a known version of tofu to use as tf_path
-          TOFU_VERSION="1.9.0"
-          curl -fsSL "https://github.com/opentofu/opentofu/releases/download/v${TOFU_VERSION}/tofu_${TOFU_VERSION}_linux_amd64.zip" -o /tmp/tofu.zip
-          unzip -q /tmp/tofu.zip -d /tmp/tofu-bin
-          chmod +x /tmp/tofu-bin/tofu
-          echo "tofu_path=/tmp/tofu-bin/tofu" >> $GITHUB_ENV
+          # Install a known tofu binary to use as tf_path
+          curl -sSL https://github.com/opentofu/opentofu/releases/download/v1.9.0/tofu_1.9.0_linux_amd64.zip -o tofu.zip
+          unzip -q tofu.zip tofu
+          chmod +x tofu
+          echo "TOFU_PATH=$(pwd)/tofu" >> $GITHUB_ENV
       - id: action
         uses: .
         with:
           tg_version: "0.67.16"
-          tf_path: "/tmp/tofu-bin/tofu"
+          tf_path: ${{ env.TOFU_PATH }}
+          tg_command: "--version"
+          tg_dir: "."
+          tg_comment: "0"
+          tg_comment_url: "https://api.github.com/repos/example/repo/issues/1/comments"
+          tg_add_approve: "1"
+          tg_output_capture: "1"
           github_token: ${{ github.token }}
-      - name: Assert terragrunt is installed
+      - name: Assert exit code is 0
+        env:
+          EXIT_CODE: ${{ steps.action.outputs.tg_action_exit_code }}
         run: |
-          if ! command -v terragrunt &>/dev/null; then
-            echo "FAIL: terragrunt not found in PATH"
+          echo "exit code: $EXIT_CODE"
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "FAIL: expected exit code 0, got '$EXIT_CODE'"
             exit 1
           fi
-          echo "PASS: terragrunt is installed"
-          terragrunt --version
+          echo "PASS: exit code is 0"

@@ -1,4 +1,4 @@
-name: Test with tg_command, tg_dir, tg_comment_url, github_token
+name: Test with tg_command and tg_dir
 on:
   workflow_dispatch:
 jobs:
@@ -6,39 +6,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - name: Create minimal terragrunt config directory
-        run: |
-          mkdir -p /tmp/tg-test
-          cat > /tmp/tg-test/terragrunt.hcl <<'EOF'
-          # Minimal terragrunt config for testing
-          EOF
       - id: action
         uses: .
         with:
           tg_version: "0.67.16"
           tofu_version: "1.9.0"
           tg_command: "--version"
-          tg_dir: "/tmp/tg-test"
-          tg_comment: "0"
-          tg_comment_url: "https://api.github.com/repos/example/repo/issues/1/comments"
+          tg_dir: "."
           github_token: ${{ github.token }}
-      - name: Assert tg_action_exit_code output exists
+          tg_output_capture: "1"
+      - name: Assert exit code output is set
         env:
           EXIT_CODE: ${{ steps.action.outputs.tg_action_exit_code }}
         run: |
-          echo "tg_action_exit_code: $EXIT_CODE"
-          if [ -z "$EXIT_CODE" ]; then
-            echo "FAIL: tg_action_exit_code output is empty"
+          echo "exit code: $EXIT_CODE"
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "FAIL: expected exit code 0, got '$EXIT_CODE'"
             exit 1
           fi
-          echo "PASS: tg_action_exit_code=$EXIT_CODE"
-      - name: Assert tg_action_output output exists
+          echo "PASS: exit code is 0"
+      - name: Assert tg_action_output is set
         env:
-          OUTPUT: ${{ steps.action.outputs.tg_action_output }}
+          TG_OUTPUT: ${{ steps.action.outputs.tg_action_output }}
         run: |
-          echo "tg_action_output: $OUTPUT"
-          if [ -z "$OUTPUT" ]; then
+          echo "tg_action_output: $TG_OUTPUT"
+          if [ -z "$TG_OUTPUT" ]; then
             echo "FAIL: tg_action_output is empty"
             exit 1
           fi
-          echo "PASS: tg_action_output is set"
+          echo "PASS: tg_action_output is non-empty"
