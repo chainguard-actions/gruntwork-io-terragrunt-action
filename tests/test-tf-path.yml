@@ -1,0 +1,74 @@
+name: Test tf_path bypasses tofu_version requirement
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # Install OpenTofu binary directly using zip download (no curl|sh)
+      - name: Install OpenTofu for tf_path test
+        run: |
+          TOFU_VERSION="1.9.0"
+          TOFU_URL="https://github.com/opentofu/opentofu/releases/download/v${TOFU_VERSION}/tofu_${TOFU_VERSION}_linux_amd64.zip"
+          curl -fsSL "$TOFU_URL" -o /tmp/tofu.zip
+          cd /tmp && unzip -o tofu.zip tofu
+          sudo mv /tmp/tofu /usr/local/bin/tofu
+          sudo chmod +x /usr/local/bin/tofu
+          which tofu
+          tofu --version
+
+      - name: Pre-install mise and terragrunt
+        run: |
+          # Install mise using install script (downloaded to file, not piped directly)
+          curl -fsSL https://mise.run -o /tmp/mise-install.sh
+          sh /tmp/mise-install.sh
+          REAL_MISE="$HOME/.local/bin/mise"
+
+          # Install terragrunt with real mise (tf_path is provided so opentofu not needed via mise)
+          $REAL_MISE use --global terragrunt@0.78.0
+
+          # Create a fake mise wrapper that reports version 2026.7.7
+          # This satisfies jdx/mise-action's version check so it skips re-downloading
+          printf '#!/bin/bash\nif [ "$1" = "--version" ]; then\n  echo "mise 2026.7.7"\n  exit 0\nfi\nexec "%s" "$@"\n' "$REAL_MISE" > /tmp/mise-wrapper
+          chmod +x /tmp/mise-wrapper
+          sudo cp /tmp/mise-wrapper /usr/local/bin/mise
+
+          # Verify
+          mise --version
+
+          # Add mise shims to PATH for subsequent steps
+          echo "$HOME/.local/share/mise/shims" >> $GITHUB_PATH
+
+      # When tf_path is provided, tofu_version is not required (even without mise.toml)
+      - id: action
+        uses: .
+        with:
+          tg_version: "0.78.0"
+          tf_path: "/usr/local/bin/tofu"
+          tg_command: "--version"
+          tg_output_capture: "1"
+          github_token: ${{ github.token }}
+
+      - name: Assert exit code is 0
+        env:
+          EXIT_CODE: ${{ steps.action.outputs.tg_action_exit_code }}
+        run: |
+          echo "exit_code: $EXIT_CODE"
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "FAIL: expected exit code 0, got $EXIT_CODE"
+            exit 1
+          fi
+          echo "PASS: exit code is 0 when tf_path is used instead of tofu_version"
+
+      - name: Assert output is non-empty
+        env:
+          TG_OUTPUT: ${{ steps.action.outputs.tg_action_output }}
+        run: |
+          echo "output: $TG_OUTPUT"
+          if [ -z "$TG_OUTPUT" ]; then
+            echo "FAIL: expected non-empty output"
+            exit 1
+          fi
+          echo "PASS: output is non-empty"
