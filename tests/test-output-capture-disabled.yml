@@ -1,4 +1,4 @@
-name: Test basic terragrunt version command
+name: Test output capture disabled
 on:
   workflow_dispatch:
 jobs:
@@ -13,6 +13,7 @@ jobs:
           tg_version: "0.78.0"
           tofu_version: "1.9.1"
           tg_command: "--version"
+          tg_output_capture: "0"
 
       - name: Assert exit code is 0
         env:
@@ -25,13 +26,13 @@ jobs:
           fi
           echo "PASS"
 
-      - name: Assert output contains terragrunt version
+      - name: Assert output is empty when capture disabled
         env:
           ACTUAL: ${{ steps.action.outputs.tg_action_output }}
         run: |
-          echo "actual: $ACTUAL"
-          if ! echo "$ACTUAL" | grep -qi "terragrunt"; then
-            echo "FAIL: expected output to contain 'terragrunt'"
+          echo "actual: '$ACTUAL'"
+          if [ -n "$ACTUAL" ]; then
+            echo "FAIL: expected empty output when tg_output_capture=0, got '$ACTUAL'"
             exit 1
           fi
-          echo "PASS"
+          echo "PASS: output was not captured as expected"

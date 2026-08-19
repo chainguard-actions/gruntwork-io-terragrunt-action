@@ -1,0 +1,52 @@
+name: Test tool installation with explicit versions
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Ensure no mise.toml exists in working directory
+        run: |
+          rm -f mise.toml .mise.toml
+          echo "No mise.toml present"
+
+      - name: Run action to install tools (no command)
+        id: action
+        uses: .
+        with:
+          tg_version: '0.77.22'
+          tofu_version: '1.9.0'
+          # tg_command is empty so no terragrunt execution happens
+
+      - name: Assert terragrunt is installed
+        run: |
+          echo "Checking terragrunt installation..."
+          if ! command -v terragrunt &>/dev/null; then
+            echo "FAIL: terragrunt is not installed"
+            exit 1
+          fi
+          TG_VER=$(terragrunt --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+          echo "terragrunt version: $TG_VER"
+          if [ -z "$TG_VER" ]; then
+            echo "FAIL: could not determine terragrunt version"
+            exit 1
+          fi
+          echo "PASS: terragrunt $TG_VER is installed"
+
+      - name: Assert opentofu is installed
+        run: |
+          echo "Checking opentofu installation..."
+          if ! command -v tofu &>/dev/null; then
+            echo "FAIL: opentofu (tofu) is not installed"
+            exit 1
+          fi
+          TOFU_VER=$(tofu --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+          echo "opentofu version: $TOFU_VER"
+          if [ -z "$TOFU_VER" ]; then
+            echo "FAIL: could not determine opentofu version"
+            exit 1
+          fi
+          echo "PASS: opentofu $TOFU_VER is installed"

@@ -1,0 +1,31 @@
+name: Test no tg_command skips execution
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # When tg_command is not set, the action should install tools but skip execution
+      - id: action
+        uses: .
+        with:
+          tg_version: "0.78.0"
+          tofu_version: "1.9.1"
+          # tg_command intentionally omitted
+
+      - name: Assert no exit code output (execution was skipped)
+        env:
+          EXIT_CODE: ${{ steps.action.outputs.tg_action_exit_code }}
+          TG_OUTPUT: ${{ steps.action.outputs.tg_action_output }}
+        run: |
+          echo "exit_code: '$EXIT_CODE'"
+          echo "tg_output: '$TG_OUTPUT'"
+          # When tg_command is empty, the Execute Terragrunt step is skipped
+          # so tg_action_exit_code and tg_action_output should be empty
+          if [ -n "$EXIT_CODE" ]; then
+            echo "FAIL: expected empty exit code when no command given, got '$EXIT_CODE'"
+            exit 1
+          fi
+          echo "PASS: execution was skipped as expected"

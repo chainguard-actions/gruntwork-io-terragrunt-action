@@ -1,4 +1,4 @@
-name: Test with tf_path and tg_comment_url
+name: Test tf_path bypasses tofu_version requirement
 on:
   workflow_dispatch:
 jobs:
@@ -6,32 +6,45 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - name: Install tofu to get a tf binary path
+
+      # Install terraform manually so we have a tf binary to reference
+      - name: Install terraform for tf_path test
         run: |
-          # Install a known tofu binary to use as tf_path
-          curl -sSL https://github.com/opentofu/opentofu/releases/download/v1.9.0/tofu_1.9.0_linux_amd64.zip -o tofu.zip
-          unzip -q tofu.zip tofu
-          chmod +x tofu
-          echo "TOFU_PATH=$(pwd)/tofu" >> $GITHUB_ENV
+          # Use a pre-installed terraform or install a minimal one
+          # We'll use tofu as the tf binary since it's compatible
+          curl -sfL https://github.com/opentofu/opentofu/releases/download/v1.9.1/tofu_1.9.1_linux_amd64.zip \
+            -o /tmp/tofu.zip
+          unzip -o /tmp/tofu.zip -d /tmp/tofu-bin
+          chmod +x /tmp/tofu-bin/tofu
+          echo "TF_BIN=/tmp/tofu-bin/tofu" >> $GITHUB_ENV
+
+      # When tf_path is provided, tofu_version should not be required
       - id: action
         uses: .
         with:
-          tg_version: "0.67.16"
-          tf_path: ${{ env.TOFU_PATH }}
+          tg_version: "0.78.0"
+          tf_path: "/tmp/tofu-bin/tofu"
           tg_command: "--version"
-          tg_dir: "."
-          tg_comment: "0"
-          tg_comment_url: "https://api.github.com/repos/example/repo/issues/1/comments"
-          tg_add_approve: "1"
-          tg_output_capture: "1"
-          github_token: ${{ github.token }}
+          # tofu_version intentionally omitted since tf_path is provided
+
       - name: Assert exit code is 0
         env:
           EXIT_CODE: ${{ steps.action.outputs.tg_action_exit_code }}
         run: |
-          echo "exit code: $EXIT_CODE"
+          echo "exit_code: $EXIT_CODE"
           if [ "$EXIT_CODE" != "0" ]; then
-            echo "FAIL: expected exit code 0, got '$EXIT_CODE'"
+            echo "FAIL: expected exit code 0, got $EXIT_CODE"
             exit 1
           fi
-          echo "PASS: exit code is 0"
+          echo "PASS"
+
+      - name: Assert output contains terragrunt version
+        env:
+          ACTUAL: ${{ steps.action.outputs.tg_action_output }}
+        run: |
+          echo "actual: $ACTUAL"
+          if ! echo "$ACTUAL" | grep -qi "terragrunt"; then
+            echo "FAIL: expected output to contain 'terragrunt'"
+            exit 1
+          fi
+          echo "PASS"

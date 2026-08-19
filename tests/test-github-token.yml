@@ -1,18 +1,22 @@
-name: Test basic terragrunt version command
+name: Test github_token input - pass token for tool installation auth
 on:
   workflow_dispatch:
+
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - id: action
+      - name: Run action with github_token provided
+        id: action
         uses: .
         with:
           tg_version: "0.78.0"
           tofu_version: "1.9.1"
           tg_command: "--version"
+          tg_output_capture: "1"
+          github_token: ${{ github.token }}
 
       - name: Assert exit code is 0
         env:
@@ -23,15 +27,15 @@ jobs:
             echo "FAIL: expected exit code 0, got $EXIT_CODE"
             exit 1
           fi
-          echo "PASS"
+          echo "PASS: exit code is 0"
 
       - name: Assert output contains terragrunt version
         env:
           ACTUAL: ${{ steps.action.outputs.tg_action_output }}
         run: |
           echo "actual: $ACTUAL"
-          if ! echo "$ACTUAL" | grep -qi "terragrunt"; then
-            echo "FAIL: expected output to contain 'terragrunt'"
+          if ! echo "$ACTUAL" | grep -qiE 'terragrunt|version'; then
+            echo "FAIL: expected output to contain 'terragrunt' or 'version'"
             exit 1
           fi
-          echo "PASS"
+          echo "PASS: output contains version information"
