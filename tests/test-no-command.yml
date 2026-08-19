@@ -1,0 +1,42 @@
+name: Test no tg_command (install only)
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # Ensure no mise.toml exists so we use explicit versions
+      - name: Remove any mise.toml if present
+        run: |
+          rm -f mise.toml .mise.toml
+
+      - id: action
+        uses: .
+        with:
+          tg_version: 0.77.22
+          tofu_version: 1.9.1
+          # Intentionally omit tg_command to test install-only mode
+          github_token: ${{ github.token }}
+
+      - name: Assert action succeeded (install only, no command)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" != "success" ]; then
+            echo "FAIL: expected action to succeed when no tg_command is provided"
+            exit 1
+          fi
+          echo "PASS: action succeeded in install-only mode"
+
+      - name: Assert terragrunt is installed and accessible
+        run: |
+          if ! command -v terragrunt &>/dev/null; then
+            echo "FAIL: terragrunt binary not found on PATH"
+            exit 1
+          fi
+          echo "PASS: terragrunt is installed"
+          terragrunt --version

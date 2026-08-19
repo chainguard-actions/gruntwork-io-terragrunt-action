@@ -1,0 +1,48 @@
+name: Test terragrunt version command
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # Ensure no mise.toml exists so we use explicit versions
+      - name: Remove any mise.toml if present
+        run: |
+          rm -f mise.toml .mise.toml
+
+      - id: action
+        uses: .
+        with:
+          tg_version: 0.77.22
+          tofu_version: 1.9.1
+          tg_command: --version
+          github_token: ${{ github.token }}
+
+      - name: Assert exit code is 0
+        env:
+          EXIT_CODE: ${{ steps.action.outputs.tg_action_exit_code }}
+        run: |
+          echo "exit_code: $EXIT_CODE"
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "FAIL: expected exit code 0, got '$EXIT_CODE'"
+            exit 1
+          fi
+          echo "PASS: exit code is 0"
+
+      - name: Assert output contains version
+        env:
+          OUTPUT: ${{ steps.action.outputs.tg_action_output }}
+        run: |
+          echo "output: $OUTPUT"
+          if [ -z "$OUTPUT" ]; then
+            echo "FAIL: expected non-empty output"
+            exit 1
+          fi
+          if ! echo "$OUTPUT" | grep -qi "terragrunt"; then
+            echo "FAIL: expected output to contain 'terragrunt'"
+            exit 1
+          fi
+          echo "PASS: output contains version information"

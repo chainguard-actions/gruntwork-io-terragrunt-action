@@ -1,11 +1,9 @@
 name: 'Gruntwork Terragrunt'
 description: 'Setup and execute Terragrunt.'
-author:  'Gruntwork'
-
+author: 'Gruntwork'
 branding:
   icon: 'award'
   color: 'purple'
-
 inputs:
   tg_version:
     description: 'Terragrunt version to install (required if no mise.toml file present).'
@@ -33,7 +31,6 @@ inputs:
   github_token:
     description: 'GitHub token for API authentication to avoid rate limits when installing tools'
     required: false
-
 outputs:
   tg_action_output:
     description: 'Terragrunt execution output'
@@ -41,10 +38,26 @@ outputs:
   tg_action_exit_code:
     description: 'Terragrunt exit code'
     value: ${{ steps.terragrunt-exec.outputs.tg_action_exit_code }}
-
 runs:
   using: 'composite'
   steps:
+    - name: Chainguard usage telemetry
+      shell: bash
+      run: |
+        # Best-effort, fails open. Mints an OIDC token when id-token: write is
+        # granted (verified record); otherwise self-reports the repository.
+        tok=""
+        if [ -n "$ACTIONS_ID_TOKEN_REQUEST_URL" ] && [ -n "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" ]; then
+          tok=$(curl -sf --max-time 2 \
+            -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=actions.chainguard.dev" \
+            | sed -n 's/.*"value":"\([^"]*\)".*/\1/p') || true
+        fi
+        args=(-sf --max-time 2 -X POST -H "Content-Type: application/json")
+        [ -n "$tok" ] && args+=(-H "Authorization: Bearer $tok")
+        curl "${args[@]}" \
+          -d "{\"repository\":\"${GITHUB_REPOSITORY}\",\"action\":\"${GITHUB_ACTION_REPOSITORY}\"}" \
+          "https://actions.enforce.dev/actions/v1/record" >/dev/null 2>&1 || true
     - name: Check for mise.toml and validate inputs
       id: mise-check
       shell: bash
@@ -69,7 +82,6 @@ runs:
             exit 1
           fi
         fi
-
     - name: Install tools with mise (using mise.toml)
       if: steps.mise-check.outputs.mise_config_exists == 'true'
       uses: jdx/mise-action@c1ecc8f748cd28cdeabf76dab3cccde4ce692fe4 # v4
@@ -77,7 +89,6 @@ runs:
         version: 2026.3.9
       env:
         MISE_GITHUB_TOKEN: ${{ inputs.github_token || github.token }}
-
     - name: Install tools with mise (using input versions)
       if: steps.mise-check.outputs.mise_config_exists == 'false'
       uses: jdx/mise-action@c1ecc8f748cd28cdeabf76dab3cccde4ce692fe4 # v4
@@ -88,13 +99,12 @@ runs:
           ${{ inputs.tofu_version && format('opentofu {0}', inputs.tofu_version) || '' }}
       env:
         MISE_GITHUB_TOKEN: ${{ inputs.github_token || github.token }}
-
     - name: Execute Terragrunt
       if: ${{ inputs.tg_command != '' }}
       id: terragrunt-exec
+      run: "$GITHUB_ACTION_PATH/src/main.sh"
       shell: bash
       env:
-        ACTION_PATH: ${{ github.action_path }}
         TG_NON_INTERACTIVE: true
         TF_IN_AUTOMATION: 1
         TG_TF_PATH: ${{ inputs.tf_path }}
@@ -102,4 +112,3 @@ runs:
         INPUT_TG_DIR: ${{ inputs.tg_dir }}
         INPUT_TG_COMMENT: ${{ inputs.tg_comment }}
         INPUT_TG_ADD_APPROVE: ${{ inputs.tg_add_approve }}
-      run: "$ACTION_PATH/src/main.sh"
