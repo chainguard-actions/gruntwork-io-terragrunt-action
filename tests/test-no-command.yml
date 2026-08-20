@@ -1,0 +1,38 @@
+name: Test no tg_command skips execution
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Ensure no mise.toml exists in workspace
+        run: |
+          rm -f mise.toml .mise.toml
+          echo "No mise.toml present"
+
+      - id: action
+        uses: .
+        with:
+          tg_version: '0.77.22'
+          tofu_version: '1.9.1'
+          # tg_command intentionally omitted — Execute Terragrunt step should be skipped
+          github_token: ${{ github.token }}
+
+      - name: Assert action succeeded (execution step was skipped)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+          EXIT_CODE: ${{ steps.action.outputs.tg_action_exit_code }}
+          OUTPUT: ${{ steps.action.outputs.tg_action_output }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "exit_code: $EXIT_CODE"
+          echo "output: $OUTPUT"
+          if [ "$OUTCOME" = "success" ]; then
+            echo "PASS: action succeeded with no tg_command (execution step skipped)"
+          else
+            echo "FAIL: expected success but got '$OUTCOME'"
+            exit 1
+          fi

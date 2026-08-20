@@ -1,0 +1,51 @@
+name: Test tg_dir input (execute terragrunt in a specific directory)
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Ensure no mise.toml exists in workspace
+        run: |
+          rm -f mise.toml .mise.toml
+          echo "No mise.toml present"
+
+      - name: Create a subdirectory to use as tg_dir
+        run: |
+          mkdir -p /tmp/tg-test-dir
+          echo "Created /tmp/tg-test-dir for tg_dir input"
+
+      - id: action
+        uses: .
+        with:
+          tg_version: '0.77.22'
+          tofu_version: '1.9.1'
+          tg_command: '--version'
+          tg_dir: '/tmp/tg-test-dir'
+          github_token: ${{ github.token }}
+
+      - name: Assert exit code is 0
+        env:
+          EXIT_CODE: ${{ steps.action.outputs.tg_action_exit_code }}
+        run: |
+          echo "exit_code: $EXIT_CODE"
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "FAIL: expected exit code 0 but got '$EXIT_CODE'"
+            exit 1
+          fi
+          echo "PASS: exit code is 0"
+
+      - name: Assert output contains version information
+        env:
+          OUTPUT: ${{ steps.action.outputs.tg_action_output }}
+        run: |
+          echo "output: $OUTPUT"
+          if echo "$OUTPUT" | grep -qiE 'terragrunt|version'; then
+            echo "PASS: output contains version information"
+          else
+            echo "FAIL: expected output to contain version info but got: $OUTPUT"
+            exit 1
+          fi
