@@ -1,4 +1,4 @@
-name: Test usage with tf_path input
+name: Test using tf_path instead of tofu_version
 on:
   workflow_dispatch:
 jobs:
@@ -7,39 +7,26 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Install OpenTofu manually
+      - name: Install a tofu binary to use as tf_path
         run: |
-          TOFU_VERSION="1.8.0"
-          curl -fsSL "https://github.com/opentofu/opentofu/releases/download/v${TOFU_VERSION}/tofu_${TOFU_VERSION}_linux_amd64.tar.gz" \
-            -o /tmp/tofu.tar.gz
-          tar -xzf /tmp/tofu.tar.gz -C /tmp
-          chmod +x /tmp/tofu
-          echo "tofu installed at /tmp/tofu"
-          /tmp/tofu version
-
-      - name: Create a minimal terragrunt config directory
-        run: |
-          mkdir -p /tmp/tg-test-tfpath
-          cat > /tmp/tg-test-tfpath/terragrunt.hcl <<'EOF'
-          # minimal terragrunt config
-          EOF
+          # Install opentofu so we have a real binary to point tf_path at
+          curl -sfL https://get.opentofu.org/install-opentofu.sh | sh -s -- --install-method deb
+          which tofu
+          echo "tofu_path=$(which tofu)" >> $GITHUB_ENV
 
       - id: action
         uses: .
         with:
-          tg_version: "0.68.0"
-          tf_path: "/tmp/tofu"
+          tg_version: "0.78.0"
+          tf_path: ${{ env.tofu_path }}
           tg_command: "--version"
-          tg_dir: "/tmp/tg-test-tfpath"
-          tg_comment: "0"
-          tg_add_approve: "0"
           github_token: ${{ github.token }}
 
       - name: Assert exit code is 0
         env:
           EXIT_CODE: ${{ steps.action.outputs.tg_action_exit_code }}
         run: |
-          echo "exit code: $EXIT_CODE"
+          echo "exit_code: $EXIT_CODE"
           if [ "$EXIT_CODE" != "0" ]; then
             echo "FAIL: expected exit code 0, got '$EXIT_CODE'"
             exit 1

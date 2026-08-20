@@ -1,0 +1,35 @@
+name: Test install tools without running a command
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          tg_version: "0.78.0"
+          tofu_version: "1.9.0"
+          # tg_command intentionally omitted — action should install tools but skip execution
+          github_token: ${{ github.token }}
+
+      - name: Assert action succeeded (no command means no execution step)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" != "success" ]; then
+            echo "FAIL: expected action to succeed when no tg_command is provided, got '$OUTCOME'"
+            exit 1
+          fi
+          echo "PASS: action succeeded without a tg_command"
+
+      - name: Assert terragrunt is installed on PATH
+        run: |
+          if ! command -v terragrunt &>/dev/null; then
+            echo "FAIL: terragrunt not found on PATH after action ran"
+            exit 1
+          fi
+          echo "PASS: terragrunt is available at $(command -v terragrunt)"
