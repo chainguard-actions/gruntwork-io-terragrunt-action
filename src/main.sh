@@ -71,15 +71,11 @@ function setup_pre_exec {
   local -r pre_exec_vars=$(env | grep -o '^INPUT_PRE_EXEC_[0-9]\+' | sort)
   # Loop through each pre-execution variable and execute its value (Bash code)
   local pre_exec_command
-  local pre_exec_script
   while IFS= read -r pre_exec_var; do
     if [[ -n "${pre_exec_var}" ]]; then
       log "Evaluating ${pre_exec_var}"
       pre_exec_command="${!pre_exec_var}"
-      pre_exec_script=$(mktemp)
-      printf '%s\n' "$pre_exec_command" > "$pre_exec_script"
-      bash "$pre_exec_script"
-      rm -f "$pre_exec_script"
+      eval "$pre_exec_command"
     fi
   done <<< "$pre_exec_vars"
 }
@@ -90,15 +86,11 @@ function setup_post_exec {
   local -r post_exec_vars=$(env | grep -o '^INPUT_POST_EXEC_[0-9]\+' | sort)
   # Loop through each pre-execution variable and execute its value (Bash code)
   local post_exec_command
-  local post_exec_script
   while IFS= read -r post_exec_var; do
     if [[ -n "${post_exec_var}" ]]; then
       log "Evaluating ${post_exec_var}"
       post_exec_command="${!post_exec_var}"
-      post_exec_script=$(mktemp)
-      printf '%s\n' "$post_exec_command" > "$post_exec_script"
-      bash "$post_exec_script"
-      rm -f "$post_exec_script"
+      eval "$post_exec_command"
     fi
   done <<< "$post_exec_vars"
 }

@@ -1,4 +1,4 @@
-name: Test basic terragrunt version command
+name: Test tg_dir input (run terragrunt in a specific directory)
 on:
   workflow_dispatch:
 jobs:
@@ -7,12 +7,18 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
+      - name: Create a subdirectory to use as tg_dir
+        run: |
+          mkdir -p /tmp/tg-workdir
+          echo "Created /tmp/tg-workdir"
+
       - id: action
         uses: .
         with:
           tg_version: "0.78.0"
           tofu_version: "1.9.0"
           tg_command: "--version"
+          tg_dir: "/tmp/tg-workdir"
           github_token: ${{ github.token }}
 
       - name: Assert exit code is 0
@@ -26,7 +32,7 @@ jobs:
           fi
           echo "PASS: exit code is 0"
 
-      - name: Assert output contains version
+      - name: Assert output contains version info
         env:
           OUTPUT: ${{ steps.action.outputs.tg_action_output }}
         run: |

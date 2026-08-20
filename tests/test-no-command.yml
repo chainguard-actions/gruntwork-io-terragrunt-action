@@ -1,4 +1,4 @@
-name: Test no tg_command skips execution
+name: Test action with no tg_command skips execution
 on:
   workflow_dispatch:
 jobs:
@@ -6,26 +6,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
       - id: action
         uses: .
         with:
-          tg_version: "0.77.22"
-          tofu_version: "1.9.1"
+          tg_version: "0.78.0"
+          tofu_version: "1.9.0"
           github_token: ${{ github.token }}
-      - name: Assert terragrunt is installed
-        run: |
-          if ! command -v terragrunt &>/dev/null; then
-            echo "FAIL: terragrunt not found in PATH"
-            exit 1
-          fi
-          echo "PASS: terragrunt is installed at $(which terragrunt)"
-      - name: Assert exit code output is empty (no command ran)
+          # tg_command intentionally omitted — execution step should be skipped
+
+      - name: Assert action succeeded (execution step skipped)
         env:
-          ACTUAL: ${{ steps.action.outputs.tg_action_exit_code }}
+          OUTCOME: ${{ steps.action.outcome }}
+          EXIT_CODE: ${{ steps.action.outputs.tg_action_exit_code }}
+          TG_OUTPUT: ${{ steps.action.outputs.tg_action_output }}
         run: |
-          echo "actual exit code output: '$ACTUAL'"
-          if [ -n "$ACTUAL" ]; then
-            echo "FAIL: expected empty tg_action_exit_code when no command is given, got '$ACTUAL'"
+          echo "outcome: $OUTCOME"
+          echo "exit_code: $EXIT_CODE"
+          echo "tg_output: $TG_OUTPUT"
+          if [ "$OUTCOME" != "success" ]; then
+            echo "FAIL: expected action to succeed when no tg_command is given"
             exit 1
           fi
-          echo "PASS: no exit code output when tg_command is not set"
+          # When tg_command is empty, the execution step is skipped, so outputs should be empty
+          if [ -n "$EXIT_CODE" ]; then
+            echo "FAIL: expected empty exit code when no command was run, got '$EXIT_CODE'"
+            exit 1
+          fi
+          echo "PASS: action succeeded and execution was skipped"

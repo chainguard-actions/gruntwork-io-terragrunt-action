@@ -1,4 +1,4 @@
-name: Test usage with tf_path input
+name: Test using tf_path instead of tofu_version
 on:
   workflow_dispatch:
 jobs:
@@ -6,18 +6,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - name: Install OpenTofu to get tf_path
+
+      - name: Install tofu binary directly to get a known path
         run: |
-          curl -fsSL https://get.opentofu.org/install-opentofu.sh | sh -s -- --install-method standalone --opentofu-version 1.9.0
-          echo "TOFU_PATH=$(which tofu)" >> $GITHUB_ENV
+          # Download opentofu binary directly (no curl|sh)
+          TOFU_VERSION="1.9.0"
+          TOFU_URL="https://github.com/opentofu/opentofu/releases/download/v${TOFU_VERSION}/tofu_${TOFU_VERSION}_linux_amd64.zip"
+          curl -sfL -o /tmp/tofu.zip "$TOFU_URL"
+          unzip -o /tmp/tofu.zip tofu -d /usr/local/bin/
+          chmod +x /usr/local/bin/tofu
+          echo "tofu installed at: $(which tofu)"
+          tofu --version
+
       - id: action
         uses: .
         with:
-          tg_version: "0.68.0"
-          tf_path: ${{ env.TOFU_PATH }}
+          tg_version: "0.78.0"
+          tf_path: "/usr/local/bin/tofu"
           tg_command: "--version"
-          tg_dir: "."
           github_token: ${{ github.token }}
+
       - name: Assert exit code is 0
         env:
           EXIT_CODE: ${{ steps.action.outputs.tg_action_exit_code }}
@@ -27,4 +35,15 @@ jobs:
             echo "FAIL: expected exit code 0, got '$EXIT_CODE'"
             exit 1
           fi
-          echo "PASS"
+          echo "PASS: exit code is 0"
+
+      - name: Assert output contains version info
+        env:
+          OUTPUT: ${{ steps.action.outputs.tg_action_output }}
+        run: |
+          echo "output: $OUTPUT"
+          if [ -z "$OUTPUT" ]; then
+            echo "FAIL: expected non-empty output"
+            exit 1
+          fi
+          echo "PASS: output is non-empty"
