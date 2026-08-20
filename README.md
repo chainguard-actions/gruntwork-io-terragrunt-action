@@ -8,7 +8,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 
 | Version | Tag | Upstream commit |
 |---------|-----|-----------------|
-| v3.0.1 | [`v3.0.1`](https://github.com/chainguard-actions/gruntwork-io-terragrunt-action/tree/v3.0.1) | — |
+| v3.0.1 | [`v3.0.1`](https://github.com/chainguard-actions/gruntwork-io-terragrunt-action/tree/v3.0.1) | [`9272fa2`](https://github.com/gruntwork-io/terragrunt-action/commit/9272fa2cc60eefcd9ff2f07b3f7b880e47e6850a) |
 | v3.0.2 | [`v3.0.2`](https://github.com/chainguard-actions/gruntwork-io-terragrunt-action/tree/v3.0.2) | [`95fc057`](https://github.com/gruntwork-io/terragrunt-action/commit/95fc057922e3c3d4cc021a81a213f088f333ddef) |
 | v3.1.0 | [`v3.1.0`](https://github.com/chainguard-actions/gruntwork-io-terragrunt-action/tree/v3.1.0) | [`5e86476`](https://github.com/gruntwork-io/terragrunt-action/commit/5e86476ca61eaf74adb9c0525745f29f921f2199) |
 | v3.2.0 | [`v3.2.0`](https://github.com/chainguard-actions/gruntwork-io-terragrunt-action/tree/v3.2.0) | [`53dbdc2`](https://github.com/gruntwork-io/terragrunt-action/commit/53dbdc2c3d43e82bf3bae10b734a968196442bec) |
