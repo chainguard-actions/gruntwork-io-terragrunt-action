@@ -1,4 +1,4 @@
-name: Test basic terragrunt version command
+name: Test using mise.toml for tool versions
 on:
   workflow_dispatch:
 jobs:
@@ -7,13 +7,17 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
+      # Create a mise.toml file in the workspace root so the action uses it for tool versions
+      - name: Create mise.toml with tool versions
+        run: |
+          printf '[tools]\nterragrunt = "0.78.0"\nopentofu = "1.9.0"\n' > "$GITHUB_WORKSPACE/mise.toml"
+
       - id: action
         uses: .
         with:
-          tg_version: "0.78.0"
-          tofu_version: "1.9.0"
           tg_command: "--version"
           github_token: ${{ github.token }}
+          # tg_version and tofu_version intentionally omitted — mise.toml provides them
 
       - name: Assert exit code is 0
         env:
@@ -26,7 +30,7 @@ jobs:
           fi
           echo "PASS: exit code is 0"
 
-      - name: Assert output contains version
+      - name: Assert output contains version info
         env:
           OUTPUT: ${{ steps.action.outputs.tg_action_output }}
         run: |
@@ -40,3 +44,7 @@ jobs:
             exit 1
           fi
           echo "PASS: output contains version info"
+
+      - name: Cleanup mise.toml
+        if: always()
+        run: rm -f "$GITHUB_WORKSPACE/mise.toml"

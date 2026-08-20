@@ -1,4 +1,4 @@
-name: Test usage with tf_path input
+name: Test using tf_path instead of tofu_version
 on:
   workflow_dispatch:
 jobs:
@@ -7,42 +7,53 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Install OpenTofu to get a tf binary path
+      # Install opentofu directly via binary download to get a real binary path
+      - name: Install opentofu binary
+        id: install-tofu
         run: |
-          curl -fsSL https://get.opentofu.org/install-opentofu.sh | sh -s -- --install-method standalone --opentofu-version 1.9.1 --install-path /tmp/tofu-bin
-          echo "Installed tofu at /tmp/tofu-bin/tofu"
-          /tmp/tofu-bin/tofu version
+          TOFU_VERSION="1.9.0"
+          TOFU_URL="https://github.com/opentofu/opentofu/releases/download/v${TOFU_VERSION}/tofu_${TOFU_VERSION}_linux_amd64.zip"
+          mkdir -p "$HOME/.local/bin"
+          curl -fsSL "$TOFU_URL" -o /tmp/tofu.zip
+          unzip -o /tmp/tofu.zip -d /tmp/tofu-extract
+          cp /tmp/tofu-extract/tofu "$HOME/.local/bin/tofu"
+          chmod +x "$HOME/.local/bin/tofu"
+          TF_BIN="$HOME/.local/bin/tofu"
+          echo "tf_bin=$TF_BIN" >> $GITHUB_OUTPUT
+          echo "Found tf binary: $TF_BIN"
+          "$TF_BIN" version
 
-      - name: Create a temp directory for tg_dir
-        run: mkdir -p /tmp/tg-test-dir
-
+      # When tf_path is provided, tofu_version is not required
       - id: action
         uses: .
         with:
-          tg_version: "0.67.16"
-          tf_path: "/tmp/tofu-bin/tofu"
-          tg_command: "version"
-          tg_dir: "/tmp/tg-test-dir"
+          tg_version: "0.78.0"
+          tf_path: ${{ steps.install-tofu.outputs.tf_bin }}
+          tg_command: "--version"
           github_token: ${{ github.token }}
 
       - name: Assert exit code is 0
         env:
-          ACTUAL: ${{ steps.action.outputs.tg_action_exit_code }}
+          EXIT_CODE: ${{ steps.action.outputs.tg_action_exit_code }}
         run: |
-          echo "actual exit code: $ACTUAL"
-          if [ "$ACTUAL" != "0" ]; then
-            echo "FAIL: expected exit code 0, got '$ACTUAL'"
+          echo "exit_code: $EXIT_CODE"
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "FAIL: expected exit code 0, got '$EXIT_CODE'"
             exit 1
           fi
-          echo "PASS"
+          echo "PASS: exit code is 0"
 
-      - name: Assert output is non-empty
+      - name: Assert output contains version info
         env:
-          ACTUAL: ${{ steps.action.outputs.tg_action_output }}
+          OUTPUT: ${{ steps.action.outputs.tg_action_output }}
         run: |
-          echo "actual output: $ACTUAL"
-          if [ -z "$ACTUAL" ]; then
+          echo "output: $OUTPUT"
+          if [ -z "$OUTPUT" ]; then
             echo "FAIL: expected non-empty output"
             exit 1
           fi
-          echo "PASS"
+          if ! echo "$OUTPUT" | grep -qi "terragrunt"; then
+            echo "FAIL: expected output to contain 'terragrunt'"
+            exit 1
+          fi
+          echo "PASS: output contains version info"

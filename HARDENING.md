@@ -1,12 +1,14 @@
+<!-- markdownlint-disable -->
+
 # Hardening Report: gruntwork-io--terragrunt-action/v3.0.2
 
 > This file was generated automatically by the hardening agent.
 
-**Policy SHA:** `ff50f15e4b79bfbf764dafdfd2579175a6ea9771`
+**Policy SHA:** `d636be7e43ef829af6e853da6b3c7566db9f72fe`
 
 **Test Policy SHA:** `843adf9e4b8f85d0c08b27b9d0b09dd094b54702`
 
-**Harden Agent Version:** `1`
+**Harden Agent Version:** `2`
 
 Action **gruntwork-io--terragrunt-action/v3.0.2** was hardened automatically. 2 finding(s) were identified and resolved across 1 iteration(s).
 
@@ -14,20 +16,20 @@ Action **gruntwork-io--terragrunt-action/v3.0.2** was hardened automatically. 2 
 
 ### unpinned-uses (severity: high)
 
-The action uses `jdx/mise-action@v2` in two steps, both pinned to a mutable version tag (`@v2`) rather than an immutable 40-character commit SHA. This exposes the action to supply-chain attacks if the tag is moved to point to malicious code.
+Two `uses:` references in action.yml pin to the mutable tag `@v2` instead of a full 40-character commit SHA. This means the action could silently pull in a different (potentially malicious) version of jdx/mise-action on any future run. Both occurrences: (1) 'Install tools with mise (using mise.toml)' step and (2) 'Install tools with mise (using input versions)' step both use `uses: jdx/mise-action@v2`. These should be pinned to a specific SHA, e.g. `uses: jdx/mise-action@<40-char-sha> # v2`.
 
 Locations:
 
-- `action.yml:67`
-- `action.yml:74`
+- `action.yml:62`
+- `action.yml:70`
 
 ### script-injection (severity: high)
 
-The 'Execute Terragrunt' step directly interpolates the `github.action_path` context expression inside a `run:` shell command string: `run: ${{ github.action_path }}/src/main.sh`. GitHub Actions expressions from the `github.*` context should be assigned to an environment variable first and then referenced as `$ENV_VAR` in the shell command, rather than being interpolated directly into the command string.
+Sub-rule (a): A `${{ }}` expression is interpolated directly inside a `run:` shell command string. The step 'Execute Terragrunt' contains `run: ${{ github.action_path }}/src/main.sh`. Even though `github.action_path` is GitHub-controlled, any `${{ ... }}` expression directly inside a `run:` block undergoes YAML template substitution before the shell ever sees it, making it a script-injection risk. The value should instead be accessed via an environment variable (e.g. `env: ACTION_PATH: ${{ github.action_path }}` and then `run: "$ACTION_PATH"/src/main.sh`).
 
 Locations:
 
-- `action.yml:84`
+- `action.yml:82`
 
 ## Iteration Notes
 
@@ -37,5 +39,5 @@ Locations:
 
 **Notes:**
 
-Fixed two security findings in action.yml: (1) Pinned both `jdx/mise-action@v2` references to the immutable commit SHA `c37c93293d6b742fc901e1406b8f764f6fb19dac` with `# v2` comment for readability. (2) Moved `${{ github.action_path }}` out of the `run:` shell command and into the step's `env:` block as `ACTION_PATH`, then referenced it as `$ACTION_PATH/src/main.sh` in the shell script to prevent script injection.
+Fixed three issues in hardened/action/action.yml: (1) Pinned both occurrences of `jdx/mise-action@v2` to the full SHA `c37c93293d6b742fc901e1406b8f764f6fb19dac` with `# v2` comment for readability. (2) Moved `${{ github.action_path }}` out of the `run:` shell string in the 'Execute Terragrunt' step into an `env:` variable `ACTION_PATH`, then referenced it as `$ACTION_PATH/src/main.sh` in the shell command to eliminate the script-injection risk.
 

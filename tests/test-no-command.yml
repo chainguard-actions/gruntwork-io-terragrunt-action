@@ -1,0 +1,28 @@
+name: Test install only without tg_command
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # When tg_command is not set, the action should install tools but skip execution
+      - id: action
+        uses: .
+        with:
+          tg_version: "0.78.0"
+          tofu_version: "1.9.0"
+          github_token: ${{ github.token }}
+          # tg_command intentionally omitted
+
+      - name: Assert action succeeded (install only)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" != "success" ]; then
+            echo "FAIL: expected action to succeed when no tg_command is provided"
+            exit 1
+          fi
+          echo "PASS: action succeeded with install-only mode"
