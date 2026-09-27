@@ -1,4 +1,4 @@
-name: Test tg_dir input (run terragrunt in a specific directory)
+name: Test tg_dir input (execute terragrunt in a specific directory)
 on:
   workflow_dispatch:
 jobs:

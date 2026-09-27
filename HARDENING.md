@@ -16,11 +16,11 @@ Action **gruntwork-io--terragrunt-action/v3.3.0** was hardened automatically. 1 
 
 ### script-injection (severity: high)
 
-Sub-rule (a): A ${{ }} expression is interpolated directly inside a `run:` shell command string. The step 'Execute Terragrunt' uses `run: ${{ github.action_path }}/src/main.sh`, which injects the github.action_path context value directly into the shell command before the shell ever sees it. Per the check rules, ANY ${{ ... }} expression inside a run: block is a script-injection finding regardless of which context it reads from. The fix is to use the $GITHUB_ACTION_PATH environment variable instead: `run: "$GITHUB_ACTION_PATH/src/main.sh"`
+Sub-rule (a): A ${{ }} expression is directly interpolated inside a `run:` shell command string. The 'Execute Terragrunt' step uses `run: ${{ github.action_path }}/src/main.sh`, which injects the GitHub Actions expression directly into the shell command before the shell ever sees it. Per the check rules, ANY ${{ ... }} expression inside a run: block is a script-injection finding regardless of which context it reads from.
 
 Locations:
 
-- `action.yml:88`
+- `action.yml:97`
 
 ## Iteration Notes
 
@@ -30,5 +30,5 @@ Locations:
 
 **Notes:**
 
-Fixed script-injection in action.yml line 88: replaced `run: ${{ github.action_path }}/src/main.sh` with `run: "$GITHUB_ACTION_PATH/src/main.sh"`. The $GITHUB_ACTION_PATH environment variable is automatically set by GitHub Actions to the same value as github.action_path, but using it avoids direct ${{ }} expression interpolation inside the run: shell command string.
+Fixed the script-injection finding in the 'Execute Terragrunt' step (action.yml line 97). Moved `${{ github.action_path }}` out of the `run:` shell command and into the step's `env:` block as `ACTION_PATH`. Updated the `run:` command from `${{ github.action_path }}/src/main.sh` to `"$ACTION_PATH/src/main.sh"`, so the expression is no longer directly interpolated into the shell command string.
 
