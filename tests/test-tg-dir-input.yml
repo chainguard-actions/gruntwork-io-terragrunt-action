@@ -38,7 +38,7 @@ jobs:
           fi
           echo "PASS: exit code is 0"
 
-      - name: Assert output contains version
+      - name: Assert output contains version info
         env:
           OUTPUT: ${{ steps.action.outputs.tg_action_output }}
         run: |
