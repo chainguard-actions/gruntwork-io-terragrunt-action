@@ -91,14 +91,14 @@ runs:
         fi
     - name: Install tools with mise (using mise.toml)
       if: steps.mise-check.outputs.mise_config_exists == 'true'
-      uses: jdx/mise-action@c1ecc8f748cd28cdeabf76dab3cccde4ce692fe4 # v4
+      uses: chainguard-actions/jdx-mise-action@f302379677cfd2d0eb2a16e25f20c11461147ba8 # v4
       with:
         version: 2026.3.9
       env:
         MISE_GITHUB_TOKEN: ${{ inputs.github_token || github.token }}
     - name: Install tools with mise (using input versions)
       if: steps.mise-check.outputs.mise_config_exists == 'false'
-      uses: jdx/mise-action@c1ecc8f748cd28cdeabf76dab3cccde4ce692fe4 # v4
+      uses: chainguard-actions/jdx-mise-action@f302379677cfd2d0eb2a16e25f20c11461147ba8 # v4
       with:
         version: 2026.3.9
         tool_versions: |
@@ -109,10 +109,9 @@ runs:
     - name: Execute Terragrunt
       if: ${{ inputs.tg_command != '' }}
       id: terragrunt-exec
-      run: "$ACTION_PATH/src/main.sh"
+      run: "$GITHUB_ACTION_PATH/src/main.sh"
       shell: bash
       env:
-        ACTION_PATH: ${{ github.action_path }}
         TG_NON_INTERACTIVE: true
         TF_IN_AUTOMATION: 1
         TG_TF_PATH: ${{ inputs.tf_path }}

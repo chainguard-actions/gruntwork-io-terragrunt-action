@@ -1,4 +1,4 @@
-name: Test tg_dir input - run terragrunt in a specific directory
+name: Test tg_dir input sets execution directory
 on:
   workflow_dispatch:
 
@@ -8,12 +8,12 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Create a subdirectory to use as tg_dir
+      - name: Create a subdirectory for tg_dir test
         run: |
           mkdir -p /tmp/tg-test-dir
-          echo "Created /tmp/tg-test-dir"
+          echo "Created test directory at /tmp/tg-test-dir"
 
-      - name: Run action with tg_dir set to a subdirectory
+      - name: Run action with tg_dir set to a specific directory
         id: action
         uses: .
         with:
@@ -21,7 +21,6 @@ jobs:
           tofu_version: "1.9.1"
           tg_command: "--version"
           tg_dir: "/tmp/tg-test-dir"
-          tg_output_capture: "1"
 
       - name: Assert exit code is 0
         env:
@@ -39,8 +38,8 @@ jobs:
           ACTUAL: ${{ steps.action.outputs.tg_action_output }}
         run: |
           echo "actual: $ACTUAL"
-          if ! echo "$ACTUAL" | grep -qiE 'terragrunt|version'; then
-            echo "FAIL: expected output to contain 'terragrunt' or 'version'"
+          if ! echo "$ACTUAL" | grep -qi "terragrunt"; then
+            echo "FAIL: expected output to contain 'terragrunt'"
             exit 1
           fi
-          echo "PASS: output contains version information"
+          echo "PASS: output contains terragrunt version info"

@@ -1,4 +1,4 @@
-name: Test tg_comment_url input - pass comment URL for output posting
+name: Test tg_comment_url input is accepted
 on:
   workflow_dispatch:
 
@@ -8,18 +8,15 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Run action with tg_comment_url provided
+      - name: Run action with tg_comment_url set
         id: action
         uses: .
         with:
           tg_version: "0.78.0"
           tofu_version: "1.9.1"
           tg_command: "--version"
-          tg_output_capture: "1"
-          # tg_comment is left at default (0) so no actual API call is made,
-          # but tg_comment_url is still passed to exercise the input
           tg_comment: "0"
-          tg_comment_url: "https://api.github.com/repos/gruntwork-io/terragrunt-action/issues/1/comments"
+          tg_comment_url: "https://api.github.com/repos/example/repo/issues/1/comments"
 
       - name: Assert exit code is 0
         env:
@@ -37,8 +34,8 @@ jobs:
           ACTUAL: ${{ steps.action.outputs.tg_action_output }}
         run: |
           echo "actual: $ACTUAL"
-          if ! echo "$ACTUAL" | grep -qiE 'terragrunt|version'; then
-            echo "FAIL: expected output to contain 'terragrunt' or 'version'"
+          if ! echo "$ACTUAL" | grep -qi "terragrunt"; then
+            echo "FAIL: expected output to contain 'terragrunt'"
             exit 1
           fi
-          echo "PASS: output contains version information"
+          echo "PASS: output contains terragrunt version info"

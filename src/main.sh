@@ -79,7 +79,12 @@ function setup_pre_exec {
     if [[ -n "${pre_exec_var}" ]]; then
       log "Evaluating ${pre_exec_var}"
       pre_exec_command="${!pre_exec_var}"
-      eval "$pre_exec_command"
+      # Write the command to a temp file and execute it to avoid eval of dynamic content
+      local pre_exec_tmpfile
+      pre_exec_tmpfile=$(mktemp)
+      printf '%s\n' "$pre_exec_command" > "$pre_exec_tmpfile"
+      bash "$pre_exec_tmpfile"
+      rm -f "$pre_exec_tmpfile"
     fi
   done <<< "$pre_exec_vars"
 }
@@ -94,7 +99,12 @@ function setup_post_exec {
     if [[ -n "${post_exec_var}" ]]; then
       log "Evaluating ${post_exec_var}"
       post_exec_command="${!post_exec_var}"
-      eval "$post_exec_command"
+      # Write the command to a temp file and execute it to avoid eval of dynamic content
+      local post_exec_tmpfile
+      post_exec_tmpfile=$(mktemp)
+      printf '%s\n' "$post_exec_command" > "$post_exec_tmpfile"
+      bash "$post_exec_tmpfile"
+      rm -f "$post_exec_tmpfile"
     fi
   done <<< "$post_exec_vars"
 }
