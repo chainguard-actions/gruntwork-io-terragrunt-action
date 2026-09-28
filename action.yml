@@ -106,7 +106,7 @@ runs:
     - name: Execute Terragrunt
       if: ${{ inputs.tg_command != '' }}
       id: terragrunt-exec
-      run: "$ACTION_PATH/src/main.sh"
+      run: '"$ACTION_PATH/src/main.sh"'
       shell: bash
       env:
         ACTION_PATH: ${{ github.action_path }}

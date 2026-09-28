@@ -10,17 +10,17 @@
 
 **Harden Agent Version:** `2`
 
-Action **gruntwork-io--terragrunt-action/v3.3.0** was hardened automatically. 1 finding(s) were identified and resolved across 1 iteration(s).
+Action **gruntwork-io--terragrunt-action/v3.3.0** was hardened automatically. 1 finding(s) were identified and resolved across 2 iteration(s).
 
 ## Findings Fixed
 
 ### script-injection (severity: high)
 
-Sub-rule (a): A ${{ }} expression is directly interpolated inside a `run:` shell command string. The 'Execute Terragrunt' step uses `run: ${{ github.action_path }}/src/main.sh`, which injects the GitHub Actions expression directly into the shell command before the shell ever sees it. Per the check rules, ANY ${{ ... }} expression inside a run: block is a script-injection finding regardless of which context it reads from.
+Sub-rule (a): A ${{ }} expression is directly interpolated inside a run: shell command string. The step 'Execute Terragrunt' uses `run: ${{ github.action_path }}/src/main.sh`, which injects the github.action_path context value directly into the shell command before the shell ever sees it. Per the check rules, any ${{ ... }} expression inside a run: block is a script-injection finding regardless of which context it reads from.
 
 Locations:
 
-- `action.yml:97`
+- `action.yml:88`
 
 ## Iteration Notes
 
@@ -30,5 +30,13 @@ Locations:
 
 **Notes:**
 
-Fixed the script-injection finding in the 'Execute Terragrunt' step (action.yml line 97). Moved `${{ github.action_path }}` out of the `run:` shell command and into the step's `env:` block as `ACTION_PATH`. Updated the `run:` command from `${{ github.action_path }}/src/main.sh` to `"$ACTION_PATH/src/main.sh"`, so the expression is no longer directly interpolated into the shell command string.
+Fixed script-injection in the 'Execute Terragrunt' step of action.yml (line 88). Moved `${{ github.action_path }}` out of the `run:` shell command string and into the step's `env:` block as `ACTION_PATH: ${{ github.action_path }}`. The `run:` command now uses the shell variable `$ACTION_PATH/src/main.sh` instead of directly interpolating the GitHub context expression.
+
+### Iteration 2
+
+**Fixes applied:** script-injection
+
+**Notes:**
+
+Fixed the script-injection finding in action.yml at line 99. The 'Execute Terragrunt' step's run: field was changed from `"$ACTION_PATH/src/main.sh"` (YAML double-quotes, no shell quoting) to `'"$ACTION_PATH/src/main.sh"'` (YAML single-quotes wrapping shell double-quotes). This ensures the shell receives the path as a properly double-quoted string, preventing shell metacharacter interpretation of the ACTION_PATH variable while still allowing variable expansion.
 
