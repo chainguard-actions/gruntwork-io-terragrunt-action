@@ -16,11 +16,11 @@ Action **gruntwork-io--terragrunt-action/v3.2.0** was hardened automatically. 1 
 
 ### script-injection (severity: high)
 
-Sub-rule (a): A ${{ }} expression is directly interpolated inside a `run:` shell command string. In the 'Execute Terragrunt' step, the run: value is `${{ github.action_path }}/src/main.sh`. Although `github.action_path` is not attacker-controlled, any `${{ ... }}` expression directly inside a `run:` block is a script-injection finding — the value flows through YAML template substitution before the shell ever sees it. The safe alternative is to use the `$GITHUB_ACTION_PATH` environment variable instead: `run: "$GITHUB_ACTION_PATH/src/main.sh"`.
+Sub-rule (a): A ${{ ... }} expression is directly interpolated inside a `run:` shell command string. In the 'Execute Terragrunt' step, the line `run: ${{ github.action_path }}/src/main.sh` embeds `${{ github.action_path }}` directly into the shell command. Per the script-injection check, any `${{ ... }}` expression inside a `run:` block is a finding — the value flows through YAML template substitution before the shell ever sees it. The safe alternative is to use the `$GITHUB_ACTION_PATH` environment variable instead: `run: "$GITHUB_ACTION_PATH/src/main.sh"`
 
 Locations:
 
-- `action.yml:83`
+- `action.yml:88`
 
 ## Iteration Notes
 
@@ -30,5 +30,5 @@ Locations:
 
 **Notes:**
 
-Fixed the script-injection finding in action.yml line 83 by replacing `${{ github.action_path }}/src/main.sh` with `"$GITHUB_ACTION_PATH/src/main.sh"` in the 'Execute Terragrunt' step's `run:` field. The `$GITHUB_ACTION_PATH` environment variable is pre-set by GitHub Actions and avoids the YAML template substitution that makes `${{ }}` expressions a script-injection risk.
+In the 'Execute Terragrunt' step of action.yml (line 88), replaced `run: ${{ github.action_path }}/src/main.sh` with `run: "$GITHUB_ACTION_PATH/src/main.sh"`. The built-in `$GITHUB_ACTION_PATH` environment variable is automatically set by GitHub Actions to the same value as `github.action_path`, so behavior is identical but without the script-injection risk of YAML template substitution.
 

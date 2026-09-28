@@ -14,7 +14,7 @@ jobs:
           rm -f mise.toml .mise.toml
 
       # Create a subdirectory to use as tg_dir
-      - name: Create target directory
+      - name: Create target directory for tg_dir
         run: |
           mkdir -p /tmp/tg-test-dir
 
@@ -38,7 +38,7 @@ jobs:
           fi
           echo "PASS: exit code is 0"
 
-      - name: Assert output contains version info
+      - name: Assert output contains version
         env:
           OUTPUT: ${{ steps.action.outputs.tg_action_output }}
         run: |
