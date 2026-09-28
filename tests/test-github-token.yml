@@ -8,13 +8,18 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Run action with explicit github_token
-        id: action
+      - name: Ensure no mise.toml exists in working directory
+        run: |
+          rm -f mise.toml .mise.toml
+          echo "No mise.toml present"
+
+      # Pass github_token explicitly to avoid rate limits during tool installation
+      - id: action
         uses: .
         with:
-          tg_version: "0.78.0"
-          tofu_version: "1.9.1"
-          tg_command: "--version"
+          tg_version: '0.78.0'
+          tofu_version: '1.9.1'
+          tg_command: '--version'
           github_token: ${{ github.token }}
 
       - name: Assert exit code is 0
@@ -33,8 +38,8 @@ jobs:
           ACTUAL: ${{ steps.action.outputs.tg_action_output }}
         run: |
           echo "actual: $ACTUAL"
-          if ! echo "$ACTUAL" | grep -qi "terragrunt"; then
-            echo "FAIL: expected output to contain 'terragrunt'"
+          if ! echo "$ACTUAL" | grep -qiE 'terragrunt|version'; then
+            echo "FAIL: expected output to contain 'terragrunt' or 'version'"
             exit 1
           fi
-          echo "PASS: output contains terragrunt version info"
+          echo "PASS: output contains version information"

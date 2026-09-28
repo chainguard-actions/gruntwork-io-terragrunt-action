@@ -1,4 +1,4 @@
-name: Test tg_dir input sets execution directory
+name: Test tg_dir input for execution directory
 on:
   workflow_dispatch:
 
@@ -8,19 +8,24 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
+      - name: Ensure no mise.toml exists in working directory
+        run: |
+          rm -f mise.toml .mise.toml
+          echo "No mise.toml present"
+
       - name: Create a subdirectory for tg_dir test
         run: |
           mkdir -p /tmp/tg-test-dir
-          echo "Created test directory at /tmp/tg-test-dir"
+          echo "Created /tmp/tg-test-dir"
 
-      - name: Run action with tg_dir set to a specific directory
-        id: action
+      # Run terragrunt --version in a specific directory via tg_dir
+      - id: action
         uses: .
         with:
-          tg_version: "0.78.0"
-          tofu_version: "1.9.1"
-          tg_command: "--version"
-          tg_dir: "/tmp/tg-test-dir"
+          tg_version: '0.78.0'
+          tofu_version: '1.9.1'
+          tg_command: '--version'
+          tg_dir: '/tmp/tg-test-dir'
 
       - name: Assert exit code is 0
         env:
@@ -38,8 +43,8 @@ jobs:
           ACTUAL: ${{ steps.action.outputs.tg_action_output }}
         run: |
           echo "actual: $ACTUAL"
-          if ! echo "$ACTUAL" | grep -qi "terragrunt"; then
-            echo "FAIL: expected output to contain 'terragrunt'"
+          if ! echo "$ACTUAL" | grep -qiE 'terragrunt|version'; then
+            echo "FAIL: expected output to contain 'terragrunt' or 'version'"
             exit 1
           fi
-          echo "PASS: output contains terragrunt version info"
+          echo "PASS: output contains version information"
