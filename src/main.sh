@@ -75,7 +75,7 @@ function setup_pre_exec {
     if [[ -n "${pre_exec_var}" ]]; then
       log "Evaluating ${pre_exec_var}"
       pre_exec_command="${!pre_exec_var}"
-      eval "$pre_exec_command"
+      bash -c "$pre_exec_command"
     fi
   done <<< "$pre_exec_vars"
 }
@@ -90,7 +90,7 @@ function setup_post_exec {
     if [[ -n "${post_exec_var}" ]]; then
       log "Evaluating ${post_exec_var}"
       post_exec_command="${!post_exec_var}"
-      eval "$post_exec_command"
+      bash -c "$post_exec_command"
     fi
   done <<< "$post_exec_vars"
 }
