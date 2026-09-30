@@ -1,4 +1,4 @@
-name: Test tg_dir input for execution directory
+name: Test tg_dir input for specifying execution directory
 on:
   workflow_dispatch:
 
@@ -18,8 +18,8 @@ jobs:
           mkdir -p /tmp/tg-test-dir
           echo "Created /tmp/tg-test-dir"
 
-      # Run terragrunt --version in a specific directory via tg_dir
-      - id: action
+      - name: Run action with tg_dir input
+        id: action
         uses: .
         with:
           tg_version: '0.78.0'
@@ -31,20 +31,24 @@ jobs:
         env:
           EXIT_CODE: ${{ steps.action.outputs.tg_action_exit_code }}
         run: |
-          echo "exit_code: $EXIT_CODE"
+          echo "exit code: $EXIT_CODE"
           if [ "$EXIT_CODE" != "0" ]; then
             echo "FAIL: expected exit code 0, got $EXIT_CODE"
             exit 1
           fi
           echo "PASS: exit code is 0"
 
-      - name: Assert output contains terragrunt version
+      - name: Assert output contains version string
         env:
-          ACTUAL: ${{ steps.action.outputs.tg_action_output }}
+          OUTPUT: ${{ steps.action.outputs.tg_action_output }}
         run: |
-          echo "actual: $ACTUAL"
-          if ! echo "$ACTUAL" | grep -qiE 'terragrunt|version'; then
-            echo "FAIL: expected output to contain 'terragrunt' or 'version'"
+          echo "output: $OUTPUT"
+          if [ -z "$OUTPUT" ]; then
+            echo "FAIL: tg_action_output is empty"
+            exit 1
+          fi
+          if ! echo "$OUTPUT" | grep -qiE 'terragrunt|version'; then
+            echo "FAIL: output does not contain 'terragrunt' or 'version'"
             exit 1
           fi
           echo "PASS: output contains version information"

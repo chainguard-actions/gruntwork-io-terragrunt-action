@@ -16,11 +16,11 @@ Action **gruntwork-io--terragrunt-action/v3.4.0** was hardened automatically. 1 
 
 ### script-injection (severity: high)
 
-Sub-rule (a): A ${{ }} expression is directly interpolated inside a run: shell command string. In the 'Execute Terragrunt' step, the run: value is `run: ${{ github.action_path }}/src/main.sh`. Any ${{ ... }} expression directly inside a run: block is a script-injection risk because the value is substituted by the YAML template engine before the shell ever sees it, bypassing shell quoting. The safe alternative is to use the $GITHUB_ACTION_PATH environment variable instead: `run: "$GITHUB_ACTION_PATH/src/main.sh"`.
+Rule (a) violation: The 'Execute Terragrunt' step uses a ${{ }} expression directly inside a `run:` shell command string: `run: ${{ github.action_path }}/src/main.sh`. Any GitHub Actions expression interpolated directly into a run: block is a script-injection risk because the value is substituted by the Actions template engine before the shell ever sees it. Even though `github.action_path` is not attacker-controlled in the same way as `github.head_ref`, the check rules require that NO `${{ ... }}` expression appear anywhere inside a run: shell command string. The safe alternative is to use the `$GITHUB_ACTION_PATH` environment variable instead: `run: "$GITHUB_ACTION_PATH/src/main.sh"`.
 
 Locations:
 
-- `action.yml:88`
+- `action.yml:95`
 
 ## Iteration Notes
 
@@ -30,5 +30,5 @@ Locations:
 
 **Notes:**
 
-Fixed the script-injection finding in action.yml at line 88 in the 'Execute Terragrunt' step. Replaced `run: ${{ github.action_path }}/src/main.sh` with `run: "$GITHUB_ACTION_PATH/src/main.sh"`. The $GITHUB_ACTION_PATH environment variable is the safe built-in alternative that is resolved by the shell rather than by the GitHub Actions template engine, eliminating the injection risk.
+Fixed the script-injection finding in action.yml line 95: replaced `run: ${{ github.action_path }}/src/main.sh` with `run: "$GITHUB_ACTION_PATH/src/main.sh"`. The built-in `$GITHUB_ACTION_PATH` environment variable is equivalent to `${{ github.action_path }}` but is resolved by the shell rather than the Actions template engine, eliminating the injection risk.
 
