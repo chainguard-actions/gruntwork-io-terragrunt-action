@@ -1,4 +1,4 @@
-name: Test tg_dir input (execute in specific directory)
+name: Test tg_dir input (run terragrunt in a subdirectory)
 on:
   workflow_dispatch:
 
@@ -14,7 +14,7 @@ jobs:
           rm -f mise.toml .mise.toml
 
       # Create a subdirectory to use as tg_dir
-      - name: Create target directory for tg_dir
+      - name: Create a subdirectory for tg_dir test
         run: |
           mkdir -p /tmp/tg-test-dir
 
