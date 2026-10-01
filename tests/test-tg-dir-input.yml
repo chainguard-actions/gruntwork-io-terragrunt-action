@@ -7,17 +7,20 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Create a subdirectory for tg_dir test
+      - name: Create a subdirectory with a minimal terragrunt config
         run: |
-          mkdir -p "$GITHUB_WORKSPACE/tg-test-dir"
+          mkdir -p /tmp/tg-test-dir
+          cat > /tmp/tg-test-dir/terragrunt.hcl <<'EOF'
+          # Minimal terragrunt config for testing
+          EOF
 
       - id: action
         uses: .
         with:
-          tg_version: "0.68.0"
+          tg_version: "0.69.10"
           tofu_version: "1.9.1"
-          tg_command: "--version"
-          tg_dir: "tg-test-dir"
+          tg_command: "terragrunt --version"
+          tg_dir: "/tmp/tg-test-dir"
 
       - name: Assert exit code is 0
         env:
@@ -30,13 +33,14 @@ jobs:
           fi
           echo "PASS"
 
-      - name: Assert output contains version
+      - name: Assert output contains terragrunt version
         env:
           OUTPUT: ${{ steps.action.outputs.tg_action_output }}
         run: |
           echo "output: $OUTPUT"
-          if [ -z "$OUTPUT" ]; then
-            echo "FAIL: expected non-empty output"
+          if echo "$OUTPUT" | grep -qi "terragrunt"; then
+            echo "PASS: output contains terragrunt version info"
+          else
+            echo "FAIL: expected output to contain 'terragrunt', got: $OUTPUT"
             exit 1
           fi
-          echo "PASS"
