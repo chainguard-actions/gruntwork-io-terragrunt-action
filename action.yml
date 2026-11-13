@@ -1,9 +1,11 @@
 name: 'Gruntwork Terragrunt'
 description: 'Setup and execute Terragrunt.'
-author: 'Gruntwork'
+author:  'Gruntwork'
+
 branding:
   icon: 'award'
   color: 'purple'
+
 inputs:
   tg_version:
     description: 'Terragrunt version to install (required if no mise.toml file present).'
@@ -38,6 +40,7 @@ inputs:
   github_token:
     description: 'GitHub token for API authentication to avoid rate limits when installing tools'
     required: false
+
 outputs:
   tg_action_output:
     description: 'Terragrunt execution output'
@@ -45,6 +48,7 @@ outputs:
   tg_action_exit_code:
     description: 'Terragrunt exit code'
     value: ${{ steps.terragrunt-exec.outputs.tg_action_exit_code }}
+
 runs:
   using: 'composite'
   steps:
@@ -74,10 +78,10 @@ runs:
         INPUT_TOFU_VERSION: ${{ inputs.tofu_version }}
       run: |
         if [[ -f "mise.toml" || -f ".mise.toml" ]]; then
-          echo "mise_config_exists=true" >> $GITHUB_OUTPUT
+          echo "mise_config_exists=true" >> "$GITHUB_OUTPUT"
           echo "Found mise configuration file, will use it for tool versions"
         else
-          echo "mise_config_exists=false" >> $GITHUB_OUTPUT
+          echo "mise_config_exists=false" >> "$GITHUB_OUTPUT"
 
           if [[ -z "${INPUT_TG_VERSION}" ]]; then
             echo "ERROR: No mise.toml found, making 'tg_version' required."
@@ -89,6 +93,7 @@ runs:
             exit 1
           fi
         fi
+
     - name: Install tools with mise (using mise.toml)
       if: steps.mise-check.outputs.mise_config_exists == 'true'
       uses: chainguard-actions/jdx-mise-action@f302379677cfd2d0eb2a16e25f20c11461147ba8 # v4
@@ -96,6 +101,7 @@ runs:
         version: 2026.3.9
       env:
         MISE_GITHUB_TOKEN: ${{ inputs.github_token || github.token }}
+
     - name: Install tools with mise (using input versions)
       if: steps.mise-check.outputs.mise_config_exists == 'false'
       uses: chainguard-actions/jdx-mise-action@f302379677cfd2d0eb2a16e25f20c11461147ba8 # v4
@@ -106,10 +112,11 @@ runs:
           ${{ inputs.tofu_version && format('opentofu {0}', inputs.tofu_version) || '' }}
       env:
         MISE_GITHUB_TOKEN: ${{ inputs.github_token || github.token }}
+
     - name: Execute Terragrunt
       if: ${{ inputs.tg_command != '' }}
       id: terragrunt-exec
-      run: "$GITHUB_ACTION_PATH/src/main.sh"
+      run: "\"$GITHUB_ACTION_PATH/src/main.sh\""
       shell: bash
       env:
         TG_NON_INTERACTIVE: true
